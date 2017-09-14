@@ -9,7 +9,6 @@ from preprocessing import inception_preprocessing
 from tensorflow.contrib import slim
 image_size = inception.inception_v4.default_image_size
 
-slim.conv2d
 
 flowers_data_dir = '../data/flowers'
 checkpoints_dir = '../data/models'
