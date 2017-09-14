@@ -54,7 +54,7 @@ from datasets import flowers
 
 def get_init_fn():
     """Returns a function run by the chief worker to warm-start the training."""
-    checkpoint_exclude_scopes=["InceptionV1/Logits", "InceptionV1/AuxLogits"]
+    checkpoint_exclude_scopes=["InceptionV4/Logits", "InceptionV4/AuxLogits"]
     
     exclusions = [scope.strip() for scope in checkpoint_exclude_scopes]
 
