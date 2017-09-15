@@ -1,24 +1,25 @@
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 from tensorflow.python.training import saver as tf_saver
-from tl_nets.tl_model import TLModel
+from nets.flower_model import TLModel
+from preparedata import PrepareData
 
 
 
-class TrainModel(object):
+class TrainModel(PrepareData):
     def __init__(self):
-             
+        PrepareData.__init__(self)     
         self.max_number_of_steps = 30
         
         
-        self.log_every_n_steps = 100
+        self.log_every_n_steps = 10
         self.save_summaries_secs= 60
         self.save_interval_secs = 60*60#one hour
         
         self.train_dir = './logs'
-        self.checkpoint_path = '../data/trained_models/vgg16/vgg_16.ckpt'
-        self.checkpoint_exclude_scopes = ["InceptionV4/Logits", "InceptionV4/AuxLogits"]
-        self.trainable_scopes = ["InceptionV4/Logits", "InceptionV4/AuxLogits"]
+        self.checkpoint_path = './data/models/inception_v4.ckpt'
+        self.checkpoint_exclude_scopes = 'InceptionV4/Logits,InceptionV4/AuxLogits'
+        self.trainable_scopes = 'InceptionV4/Logits,InceptionV4/AuxLogits'
         
         
         return
@@ -97,10 +98,10 @@ class TrainModel(object):
         tf.logging.set_verbosity(tf.logging.INFO)
         
         net = TLModel()
-        #preapre input, label,and variables to restore
-        
-        net.variables_to_train = self.__get_variables_to_train()
-        net.build_train_graph()
+        #preapre input, label,
+        net.input, _ , net.labels = self.get_input("train", is_training=True)  
+        net.build_train_graph(self.__get_variables_to_train)
+       
         
         
         

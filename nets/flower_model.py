@@ -2,9 +2,7 @@ import os
 import sys
 sys.path.append('../models/slim')
 import tensorflow as tf
-from datasets import flowers
-from nets import inception
-from preprocessing import inception_preprocessing
+from nets import inception_v4
 
 from tensorflow.contrib import slim
 
@@ -16,24 +14,40 @@ class TLModel(object):
         self.input = None
         self.labels = None
         return
-    def build_train_graph(self):
+    def build_eval_graph(self):
+        self.add_inference_node(is_training = False)
+        self.add_evalmetrics_node()
+        return
+    def add_evalmetrics_node(self):
+        predictions = tf.argmax(self.output, 1)
+    
+        # Define the metrics:
+        names_to_values, names_to_updates = slim.metrics.aggregate_metric_map({
+            'eval/Accuracy': slim.metrics.streaming_accuracy(predictions, self.labels)
+        })
+        for metric, value in names_to_values.items():
+            value = tf.Print(value, [value], metric)
+            tf.summary.scalar(metric, value)
+        self.names_to_updates = list(names_to_updates.values())
+        return 
+    def build_train_graph(self, get_variables_to_train):
         #before building the graph, we need to specify the input and labels, and variables_to_train for the models
         self.add_inference_node(is_training = True)
         self.add_loss_node()
-        self.add_optimizer_node()
+        self.add_optimizer_node(get_variables_to_train)
         self.add_train_summaries()
         return
     def add_inference_node(self, is_training=True):
-        with slim.arg_scope(inception.inception_v4_arg_scope()):
-            self.output, self.end_points = inception.inception_v4(self.input, num_classes=5, 
+        with slim.arg_scope(inception_v4.inception_v4_arg_scope()):
+            self.output, self.end_points = inception_v4.inception_v4(self.input, num_classes=5, 
                                                                   is_training=is_training, dropout_keep_prob=0.8,create_aux_logits=True)
         return
     def add_loss_node(self):
         self.loss = tf.losses.sparse_softmax_cross_entropy(self.labels, self.output)
         return
-    def add_optimizer_node(self):
+    def add_optimizer_node(self, get_variables_to_train):
         optimizer = tf.train.AdamOptimizer(learning_rate=0.01)
-        self.train_op = slim.learning.create_train_op(self.loss, optimizer, variables_to_train=self.variables_to_train)
+        self.train_op = slim.learning.create_train_op(self.loss, optimizer, variables_to_train=get_variables_to_train())
         return
     def add_train_summaries(self):
         end_points = self.end_points
@@ -44,7 +58,7 @@ class TLModel(object):
                                             tf.nn.zero_fraction(x))
         # Add summaries for losses and extra losses.
         
-        tf.summary.scalar('loss', self.oss)
+        tf.summary.scalar('loss', self.loss)
         # Add summaries for variables.
         for variable in slim.get_model_variables():
             tf.summary.histogram(variable.op.name, variable)
