@@ -3,46 +3,59 @@ import tensorflow.contrib.slim as slim
 from nets.flower_model import TLModel
 from preparedata import PrepareData
 import math
+import argparse
 
 
 
 class EvaluateModel(PrepareData):
     def __init__(self):
         PrepareData.__init__(self)  
+        self.batch_size = 32
         
         return
+    def parse_param(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-s', '--split_name',  help='which split of dataset to use',  default="")
+        parser.add_argument('-c', '--checkpoint_path',  help='which checkpoint to use',  default="")
+        args = parser.parse_args()
+        
+        self.checkpoint_path = "./logs/"
+        self.split_name = "validation"
+        if args.checkpoint_path != "":
+            self.checkpoint_path = args.checkpoint_path
+        if args.split_name != "":
+            self.split_name = args.split_name
+            
+        return
+    
     
     def run(self): 
+        self.parse_param()
        
         tf.logging.set_verbosity(tf.logging.INFO)
         net = TLModel()
         _ = slim.get_or_create_global_step()
-        batch_size = 2
-      
         
-        split_name = "train"
-        net.input, _ , net.labels = self.get_input(split_name, is_training=False,batch_size=batch_size)
+      
+        net.input, _ , net.labels = self.get_input(self.split_name, is_training=False,batch_size=self.batch_size)
         net.build_eval_graph()
         
         
-        logdir = './logs/evals/' + split_name
-        checkpoint_path = './logs'
-        
-        num_batches = math.ceil(self.dataset.num_samples / float(batch_size))
+        num_batches = math.ceil(self.dataset.num_samples / float(self.batch_size))
         # Standard evaluation loop.
-        print("one time evaluate...")
-        if tf.gfile.IsDirectory(checkpoint_path):
-            checkpoint_file = tf.train.latest_checkpoint(checkpoint_path)
+       
+        if tf.gfile.IsDirectory(self.checkpoint_path):
+            checkpoint_file = tf.train.latest_checkpoint(self.checkpoint_path)
         else:
-            checkpoint_file = checkpoint_path
-        tf.logging.info('Evaluating %s' % checkpoint_file)
+            checkpoint_file = self.checkpoint_path
+        tf.logging.info('Evaluating checkpoint_path={}, split={}'.format(checkpoint_file, self.split_name))
        
        
        
         slim.evaluation.evaluate_once(
             master='',
             checkpoint_path=checkpoint_file,
-            logdir=logdir,
+            logdir='./logs/evals/' + self.split_name,
             num_evals=num_batches,
             eval_op=net.names_to_updates ,
             variables_to_restore=slim.get_variables_to_restore())

@@ -9,7 +9,7 @@ from preparedata import PrepareData
 class TrainModel(PrepareData):
     def __init__(self):
         PrepareData.__init__(self)     
-        self.max_number_of_steps = 30
+        self.max_number_of_steps = int(3320/32) * 10
         
         
         self.log_every_n_steps = 10
