@@ -1,8 +1,5 @@
-import os
-import sys
-sys.path.append('../models/slim')
 import tensorflow as tf
-from nets import inception_v4
+import nets.inception_v4  as inception_v4
 
 from tensorflow.contrib import slim
 
@@ -34,7 +31,6 @@ class TLModel(object):
         #before building the graph, we need to specify the input and labels, and variables_to_train for the models
         self.add_inference_node(is_training = True)
         self.add_loss_node()
-        self.add_train_summaries()
         return
     def add_inference_node(self, is_training=True):
         with slim.arg_scope(inception_v4.inception_v4_arg_scope()):
@@ -43,19 +39,4 @@ class TLModel(object):
         return
     def add_loss_node(self):
         self.loss = tf.losses.sparse_softmax_cross_entropy(self.labels, self.output)
-        return
-
-    def add_train_summaries(self):
-        end_points = self.end_points
-        for end_point in end_points:
-            x = end_points[end_point]
-            tf.summary.histogram('activations/' + end_point, x)
-            tf.summary.scalar('sparsity/' + end_point,
-                                            tf.nn.zero_fraction(x))
-        # Add summaries for losses and extra losses.
-        
-        tf.summary.scalar('loss', self.loss)
-        # Add summaries for variables.
-        for variable in slim.get_model_variables():
-            tf.summary.histogram(variable.op.name, variable)
         return
