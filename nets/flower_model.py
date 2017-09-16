@@ -30,11 +30,10 @@ class TLModel(object):
             tf.summary.scalar(metric, value)
         self.names_to_updates = list(names_to_updates.values())
         return 
-    def build_train_graph(self, get_variables_to_train):
+    def build_train_graph(self):
         #before building the graph, we need to specify the input and labels, and variables_to_train for the models
         self.add_inference_node(is_training = True)
         self.add_loss_node()
-        self.add_optimizer_node(get_variables_to_train)
         self.add_train_summaries()
         return
     def add_inference_node(self, is_training=True):
@@ -45,10 +44,7 @@ class TLModel(object):
     def add_loss_node(self):
         self.loss = tf.losses.sparse_softmax_cross_entropy(self.labels, self.output)
         return
-    def add_optimizer_node(self, get_variables_to_train):
-        optimizer = tf.train.AdamOptimizer(learning_rate=0.01)
-        self.train_op = slim.learning.create_train_op(self.loss, optimizer, variables_to_train=get_variables_to_train())
-        return
+
     def add_train_summaries(self):
         end_points = self.end_points
         for end_point in end_points:

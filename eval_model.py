@@ -20,7 +20,7 @@ class EvaluateModel(PrepareData):
         args = parser.parse_args()
         
         self.checkpoint_path = "./logs/"
-        self.split_name = "validation"
+        self.split_name = "train"
         if args.checkpoint_path != "":
             self.checkpoint_path = args.checkpoint_path
         if args.split_name != "":
